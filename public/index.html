@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f5f0" />
+    <title>Jev — Flight Lab</title>
+    <link rel="icon" href="/favicon.svg" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="header">
+      <a class="brand" href="/" aria-label="Jev Flight Lab home"
+        ><img src="/favicon.svg" alt="" width="34" height="34" /><span
+          >jev<span class="brand-dot">.</span></span
+        ><span class="brand-divider"></span
+        ><span class="brand-caption">PLAYGROUND</span></a
+      >
+      <div class="header-right">
+        <span class="experiment">EXPERIMENT 001</span
+        ><a
+          class="external"
+          href="https://openrouter.ai/typesafe/jev-1.13"
+          target="_blank"
+          rel="noreferrer"
+          >Powered by OpenRouter <span>↗</span></a
+        >
+      </div>
+    </header>
+    <main>
+      <section class="intro">
+        <div>
+          <div class="eyebrow">
+            <span class="tiny-line"></span> SMALL BIRD. BIG DECISIONS.
+          </div>
+          <h1>Let intelligence take flight<span>.</span></h1>
+          <p>
+            A little game of timing, gravity, and good judgment. Watch Jev find
+            its way.
+          </p>
+        </div>
+        <button class="button secondary how-button" id="how-button">
+          <span>ⓘ</span> How it works
+        </button>
+      </section>
+      <section class="workspace">
+        <div class="flight-column">
+          <section class="game-card" aria-label="Flappy Bird game">
+            <div class="card-toolbar">
+              <div class="card-title">
+                <span class="small-bird">↗</span>
+                <h2>Flappy Bird</h2>
+                <span class="version">v.01</span>
+              </div>
+              <div class="mode-toggle" role="group" aria-label="Flight control">
+                <button class="selected" data-mode="jev" aria-pressed="true">
+                  ✧ Jev pilot</button
+                ><button data-mode="manual" aria-pressed="false">
+                  ⌨ Your turn
+                </button>
+              </div>
+            </div>
+            <div class="arena">
+              <canvas
+                id="game"
+                width="1000"
+                height="520"
+                aria-label="Bird flying through a pastel landscape of green pipes. Use space or tap to flap in manual mode."
+              ></canvas>
+              <div class="arena-top">
+                <span class="arena-status" id="arena-status"
+                  ><i></i> READY FOR TAKEOFF</span
+                ><span class="arena-coordinates"
+                  >FIELD 01 &nbsp; / &nbsp; DAYLIGHT</span
+                >
+              </div>
+              <div class="game-score" id="game-score">00</div>
+              <div class="overlay" id="overlay">
+                <div class="overlay-icon">✧</div>
+                <h3 id="overlay-title">A bird. A brain. A little bravery.</h3>
+                <p id="overlay-copy">
+                  Jev takes the controls. You get the front-row seat.
+                </p>
+                <button id="start-button" class="button primary">
+                  <span>▶</span> Start flight</button
+                ><span class="overlay-footnote" id="overlay-footnote"
+                  >Every move starts with a decision.</span
+                >
+              </div>
+              <div class="arena-bottom">
+                <span
+                  ><i class="orange-dot"></i>
+                  <span id="pilot-label">JEV AUTOPILOT</span></span
+                ><span id="world-speed"
+                  >CONTINUOUS FLIGHT · ASYNC DECISIONS</span
+                >
+              </div>
+            </div>
+            <div class="game-controls">
+              <div class="flight-state">
+                <span class="status-light" id="status-light"></span
+                ><span id="flight-status">Waiting to spread our wings</span>
+              </div>
+              <div class="control-buttons">
+                <button
+                  class="icon-button"
+                  id="pause-button"
+                  disabled
+                  aria-label="Pause flight"
+                  title="Pause flight"
+                >
+                  Ⅱ</button
+                ><span class="control-divider"></span
+                ><button
+                  class="icon-button"
+                  id="reset-button"
+                  aria-label="Reset flight"
+                  title="Reset flight"
+                >
+                  ↻</button
+                ><button
+                  class="icon-button"
+                  id="sound-button"
+                  aria-label="Enable sound"
+                  aria-pressed="false"
+                  title="Toggle sound"
+                >
+                  ♪<span class="sound-off">×</span>
+                </button>
+              </div>
+            </div>
+            <div class="speed-controls">
+              <div class="speed-description">
+                <label for="speed-boost">Speed boost</label>
+                <span id="speed-help"
+                  >Auto acceleration: 1× → 2× in 50s. Boost multiplies it.</span
+                >
+              </div>
+              <input
+                id="speed-boost"
+                type="range"
+                min="1"
+                max="2"
+                step="0.1"
+                value="1"
+                aria-describedby="speed-help"
+                aria-valuetext="1.0× boost on top of automatic acceleration"
+              />
+              <output id="speed-boost-value" for="speed-boost">1.0×</output>
+            </div>
+          </section>
+          <div class="stats">
+            <div class="stat">
+              <span class="stat-label">PIPES CLEARED <span>⚑</span></span
+              ><strong id="score">0<span> pipes</span></strong
+              ><small>A little further, every time.</small>
+            </div>
+            <div class="stat">
+              <span class="stat-label">PERSONAL BEST <span>♜</span></span
+              ><strong id="best">0<span> pipes</span></strong
+              ><small id="best-caption"
+                >Your next flight could be the one.</small
+              >
+            </div>
+            <div class="stat">
+              <span class="stat-label">FLIGHT TIME <span>◷</span></span
+              ><strong id="flight-time">00<span>:00</span></strong
+              ><small>Time in the simulated sky.</small>
+            </div>
+          </div>
+          <div class="connection-note" id="connection-note">
+            <span class="note-icon">⌁</span>
+            <div>
+              <strong id="connection-title">Checking the connection…</strong>
+              <p id="connection-copy">Getting the flight deck ready.</p>
+            </div>
+            <button id="connect-button" class="text-button">
+              Reconnect ↗
+            </button>
+          </div>
+        </div>
+        <aside class="telemetry">
+          <section class="pilot-card">
+            <div class="section-heading">
+              <h2>Meet your pilot</h2>
+              <span class="live-badge" id="live-badge"><i></i> STANDBY</span>
+            </div>
+            <div class="pilot-profile">
+              <div class="pilot-avatar"><span>j</span><i>✦</i></div>
+              <div>
+                <h3>Jev<span>.ai</span></h3>
+                <p>Small model. Sharp instincts.</p>
+              </div>
+            </div>
+            <div class="model-row">
+              <span>MODEL</span><code id="model-name">typesafe/jev-1.13</code>
+            </div>
+            <div class="pilot-metrics">
+              <div>
+                <span>Decisions made</span
+                ><strong id="decision-count">—</strong>
+              </div>
+              <div>
+                <span>Last response</span
+                ><strong id="latency">—<small> ms</small></strong>
+              </div>
+            </div>
+            <div class="guard-row">
+              <div>
+                <strong>Collision guard</strong>
+                <p>Checks the next move for danger.</p>
+              </div>
+              <button
+                id="guard-toggle"
+                class="switch on"
+                role="switch"
+                aria-checked="true"
+                aria-label="Collision guard"
+              ></button>
+            </div>
+            <p class="guard-caption" id="guard-caption">
+              Interventions are labeled in the decision log.
+            </p>
+          </section>
+          <section class="decision-card">
+            <div class="section-heading">
+              <h2>Inside the decision</h2>
+              <span class="little-label">LIVE</span>
+            </div>
+            <div class="decision-output">
+              <span class="decision-icon" id="decision-icon">↗</span>
+              <div>
+                <span class="small-label">LATEST ACTION</span
+                ><strong id="latest-action">Ready when you are</strong>
+              </div>
+              <span id="confidence" class="confidence">—</span>
+            </div>
+            <div class="probability-track">
+              <span id="probability-fill"></span>
+            </div>
+            <div class="probability-labels">
+              <span>↑ Flap <b id="flap-prob">—</b></span
+              ><span>↓ Coast <b id="coast-prob">—</b></span>
+            </div>
+            <div class="sensor-grid">
+              <div>
+                <span>Bird altitude</span
+                ><strong id="bird-altitude">234 <small>px</small></strong>
+              </div>
+              <div>
+                <span>Next obstacle</span
+                ><strong id="next-obstacle">400 <small>px</small></strong>
+              </div>
+            </div>
+            <button id="data-button" class="data-button">
+              { } <span>Inspect input & output</span> <span>↗</span>
+            </button>
+          </section>
+          <section class="log-card">
+            <div class="section-heading">
+              <h2>Flight log</h2>
+              <span id="log-count" class="little-label">0 EVENTS</span>
+            </div>
+            <ol id="flight-log">
+              <li class="empty-log">
+                <span class="empty-orbit">◎</span>
+                <p>A story in small decisions.</p>
+                <span>Your flight log will appear here.</span>
+              </li>
+            </ol>
+          </section>
+        </aside>
+      </section>
+      <footer>
+        <span class="footer-mark">✳</span
+        ><span>A playground for real-time intelligence.</span
+        ><span class="footer-right"
+          >STATE IN <span>→</span> DECISION OUT <span>→</span> WINGS UP</span
+        >
+      </footer>
+    </main>
+    <dialog id="info-dialog">
+      <div class="dialog-header">
+        <span class="eyebrow">THE FLIGHT PLAN</span
+        ><button class="icon-button close-dialog" aria-label="Close dialog">
+          ×
+        </button>
+      </div>
+      <h2>A tiny loop.<br />A smarter flight.</h2>
+      <div class="explain-step">
+        <span>01</span>
+        <div>
+          <h3>Observe the sky</h3>
+          <p>
+            Bird position, velocity, pipe gaps, and predicted trajectories
+            become structured input for Jev.
+          </p>
+        </div>
+      </div>
+      <div class="explain-step">
+        <span>02</span>
+        <div>
+          <h3>Make a decision</h3>
+          <p>
+            OpenRouter sends the state to Jev’s Decisions API. Jev returns a
+            flap or coast choice, with probabilities when available. The game
+            applies its choice.
+          </p>
+        </div>
+      </div>
+      <div class="explain-step">
+        <span>03</span>
+        <div>
+          <h3>Let it fly</h3>
+          <p>
+            The sky moves continuously while Jev replies in the background. Each
+            reply is used once at the next control step. The optional collision
+            guard checks the current position and can cover delayed replies.
+            Each guard intervention is labeled separately from Jev's decisions.
+            Crashes are still possible.
+          </p>
+        </div>
+      </div>
+      <div class="setup-box">
+        <strong>Connect your pilot</strong>
+        <p>
+          Add your OpenRouter key to <code>.env</code>, then restart the server.
+        </p>
+        <pre>OPENROUTER_API_KEY=your_key_here</pre>
+        <p>
+          In Your turn mode, press <kbd>Space</kbd> or tap the game to flap.
+          Press <kbd>P</kbd> to pause.
+        </p>
+      </div>
+      <button class="button primary close-dialog">Got it. Let’s fly ↗</button>
+    </dialog>
+    <dialog id="data-dialog">
+      <div class="dialog-header">
+        <span class="eyebrow">UNDER THE WINGS</span
+        ><button class="icon-button close-dialog" aria-label="Close dialog">
+          ×
+        </button>
+      </div>
+      <h2>State in. Decision out.</h2>
+      <p class="dialog-subtitle">
+        The latest game snapshot and the returned Jev decision.
+      </p>
+      <h3 class="code-heading">INPUT · GAME STATE + PREDICTIONS</h3>
+      <pre id="input-json">Start a Jev flight to see its input.</pre>
+      <h3 class="code-heading">OUTPUT · JEV DECISION</h3>
+      <pre id="output-json">Waiting for the first decision.</pre>
+    </dialog>
+    <div id="toast" class="toast" role="status" hidden></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

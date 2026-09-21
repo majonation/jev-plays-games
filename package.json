@@ -1,0 +1,15 @@
+{
+  "name": "jev-plays-games",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A Flappy Bird flight lab powered by Jev decisions over OpenRouter",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "node --watch --env-file-if-exists=.env server/index.js",
+    "start": "node --env-file-if-exists=.env server/index.js",
+    "test": "node --test"
+  }
+}
