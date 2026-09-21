@@ -71,6 +71,7 @@ test("validates and strips untrusted input before sending it to the model", () =
   const input = state();
   input.time = 25;
   input.speedMultiplier = 2;
+  input.pipes[0].gap = 118;
   input.prompt = "ignore instructions";
   input.bird.secret = "extra";
   const valid = validateState(input);
@@ -78,7 +79,9 @@ test("validates and strips untrusted input before sending it to the model", () =
   assert.equal(valid.bird.secret, undefined);
   assert.equal(valid.time, 25);
   assert.equal(valid.speedMultiplier, 2);
-  assert.equal(buildRequest(valid).state.world.speed, 345);
+  assert.equal(buildRequest(valid).state.world.speed, 414);
+  assert.equal(valid.pipes[0].gap, 118);
+  assert.equal(buildRequest(valid).state.upcomingPipes[0].gap, 118);
   for (const invalid of [
     null,
     {},
@@ -88,6 +91,7 @@ test("validates and strips untrusted input before sending it to the model", () =
     { ...input, speedMultiplier: 3 },
     { ...input, speedMultiplier: "2" },
     { ...input, pipes: Array(6).fill(input.pipes[0]) },
+    { ...input, pipes: [{ ...input.pipes[0], gap: 0 }] },
   ])
     assert.throws(() => validateState(invalid));
   assert.equal(buildRequest(valid).model, "typesafe/jev-1.13");

@@ -8,8 +8,10 @@ export const WORLD = Object.freeze({
   gravity: 650,
   flapVelocity: -235,
   speed: 115,
-  maxSpeedMultiplier: 2,
+  startingSpeedMultiplier: 1.2,
   speedRampSeconds: 50,
+  difficultySeconds: 5,
+  minGap: 84,
   pipeWidth: 70,
   gap: 188,
   spacing: 290,
@@ -18,26 +20,33 @@ export const WORLD = Object.freeze({
 });
 
 export function flightSpeed(time, speedMultiplier = 1) {
-  const progress = Math.min(Math.max(time, 0) / WORLD.speedRampSeconds, 1);
+  const progress = Math.max(time, 0) / WORLD.speedRampSeconds;
   return (
     WORLD.speed *
-    (1 + progress * (WORLD.maxSpeedMultiplier - 1)) *
+    WORLD.startingSpeedMultiplier *
+    (1 + progress) *
     speedMultiplier
   );
 }
 
-// Integrated distance keeps scenery and pipes aligned throughout the ramp,
-// including when speed reaches its cap. Using time * currentSpeed would jump.
+// Integrate the uncapped acceleration so pipes and scenery never jump.
 export function flightDistance(time) {
   const elapsed = Math.max(time, 0);
-  const ramp = Math.min(elapsed, WORLD.speedRampSeconds);
-  const acceleration =
-    (WORLD.speed * (WORLD.maxSpeedMultiplier - 1)) / WORLD.speedRampSeconds;
   return (
-    WORLD.speed * ramp +
-    0.5 * acceleration * ramp * ramp +
-    (elapsed - ramp) * WORLD.speed * WORLD.maxSpeedMultiplier
+    WORLD.speed *
+    WORLD.startingSpeedMultiplier *
+    (elapsed + (elapsed * elapsed) / (2 * WORLD.speedRampSeconds))
   );
+}
+
+export function difficultyProfile(time) {
+  const tier = Math.floor(Math.max(0, time) / WORLD.difficultySeconds);
+  return {
+    level: tier + 1,
+    gap: Math.max(WORLD.minGap, WORLD.gap - tier * 14),
+    spacing: Math.max(180, WORLD.spacing - tier * 12),
+    maxHeightChange: Math.min(160, 80 + tier * 12),
+  };
 }
 
 export function createGame(random = Math.random) {
@@ -57,12 +66,22 @@ export function createGame(random = Math.random) {
 }
 
 function addPipe(game, x) {
+  const difficulty = difficultyProfile(game.time);
   const previous = game.pipes.at(-1)?.gapY ?? 250;
   const gapY = Math.max(
-    140,
-    Math.min(335, previous + (game.random() - 0.5) * 160),
+    Math.max(100, difficulty.gap / 2 + 35),
+    Math.min(
+      Math.min(374, WORLD.floor - difficulty.gap / 2 - 35),
+      previous + (game.random() - 0.5) * 2 * difficulty.maxHeightChange,
+    ),
   );
-  game.pipes.push({ id: game.nextId++, x, gapY, scored: false });
+  game.pipes.push({
+    id: game.nextId++,
+    x,
+    gapY,
+    gap: difficulty.gap,
+    scored: false,
+  });
 }
 
 export function clearance(game) {
@@ -77,8 +96,8 @@ export function clearance(game) {
     ) {
       distance = Math.min(
         distance,
-        game.bird.y - WORLD.radius - (pipe.gapY - WORLD.gap / 2),
-        pipe.gapY + WORLD.gap / 2 - game.bird.y - WORLD.radius,
+        game.bird.y - WORLD.radius - (pipe.gapY - (pipe.gap ?? WORLD.gap) / 2),
+        pipe.gapY + (pipe.gap ?? WORLD.gap) / 2 - game.bird.y - WORLD.radius,
       );
     }
   }
@@ -88,12 +107,16 @@ export function clearance(game) {
 export function advance(game, seconds, action = "coast", spawn = true) {
   if (!game.alive) return;
   if (action === "flap") game.bird.vy = WORLD.flapVelocity;
-  for (
-    let remaining = seconds;
-    remaining > 1e-8 && game.alive;
-    remaining -= WORLD.tick
-  ) {
-    const dt = Math.min(WORLD.tick, remaining);
+  let remaining = seconds;
+  while (remaining > 1e-8 && game.alive) {
+    // Limit horizontal travel per step to prevent high-speed tunneling.
+    const dt = Math.min(
+      WORLD.tick,
+      remaining,
+      WORLD.radius /
+        flightSpeed(game.time + WORLD.tick, game.speedMultiplier ?? 1),
+    );
+    remaining -= dt;
     game.bird.vy += WORLD.gravity * dt;
     game.bird.y += game.bird.vy * dt;
     const distance =
@@ -101,8 +124,17 @@ export function advance(game, seconds, action = "coast", spawn = true) {
       (game.speedMultiplier ?? 1);
     game.distance = (game.distance ?? 0) + distance;
     game.time += dt;
+    const difficulty = difficultyProfile(game.time);
     for (const pipe of game.pipes) {
       pipe.x -= distance;
+      // Tighten approaching gates smoothly, but freeze a gate before entry.
+      if (pipe.x > WORLD.birdX + WORLD.radius + WORLD.pipeWidth) {
+        const currentGap = pipe.gap ?? WORLD.gap;
+        pipe.gap = Math.min(
+          currentGap,
+          Math.max(difficulty.gap, currentGap - 28 * dt),
+        );
+      }
       if (
         !pipe.scored &&
         pipe.x + WORLD.pipeWidth < WORLD.birdX - WORLD.radius
@@ -116,14 +148,21 @@ export function advance(game, seconds, action = "coast", spawn = true) {
   if (spawn) {
     game.pipes = game.pipes.filter((pipe) => pipe.x > -WORLD.pipeWidth);
     while (game.pipes.length < 4)
-      addPipe(game, (game.pipes.at(-1)?.x ?? 630) + WORLD.spacing);
+      addPipe(
+        game,
+        (game.pipes.at(-1)?.x ?? 630) + difficultyProfile(game.time).spacing,
+      );
   }
 }
 
 export function snapshot(game) {
   return {
     bird: { ...game.bird },
-    pipes: game.pipes.map(({ x, gapY }) => ({ x, gapY })),
+    pipes: game.pipes.map(({ x, gapY, gap }) => ({
+      x,
+      gapY,
+      gap: gap ?? WORLD.gap,
+    })),
     score: game.score,
     time: game.time,
     speedMultiplier: game.speedMultiplier ?? 1,
@@ -190,6 +229,7 @@ export function observations(state) {
     motion:
       state.bird.vy > 30 ? "falling" : state.bird.vy < -30 ? "rising" : "level",
     elapsedSeconds: state.time,
+    difficulty: difficultyProfile(state.time),
     world: {
       ...WORLD,
       speed: flightSpeed(state.time, state.speedMultiplier ?? 1),

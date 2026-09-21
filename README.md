@@ -1,61 +1,179 @@
-# Jev Flight Lab
+# 🐤 Jev Flight Lab
 
-A Flappy Bird game controlled by **TypeSafe Jev through OpenRouter**, with a canvas landscape, live decision probabilities, an input/output inspector, and a manual mode.
+**One bird. Two decisions. No speed limit.**
 
-## Run locally
+Give an AI a pair of wings and a very simple job: stay alive.
 
-Requires Node.js **22.13 or newer**. No dependencies or build step.
+Jev Flight Lab is a Flappy Bird playground where [TypeSafe’s Jev](https://openrouter.ai/typesafe/jev-1.13) receives structured game data through OpenRouter and chooses **flap** or **coast**. You can watch its decisions arrive, inspect what it saw, turn up the speed, or take the controls yourself.
+
+The catch? The sky keeps accelerating. Every five seconds, the obstacles get meaner.
+
+![Jev Flight Lab during a live flight: the bird navigates pipes while the dashboard shows real decisions, response times, probabilities, the speed slider, and guard interventions.](docs/images/flight-lab.jpg)
+
+_An actual Jev flight through OpenRouter, with the optional collision guard enabled. The screenshot is a moment from a run, not a performance benchmark._
+
+[Take off](#take-off) · [Try the challenge](#the-30-second-club) · [Under the wings](#under-the-wings) · [Tinker](#make-it-your-own)
+
+## A small game with a lot to watch
+
+- **An AI at the controls.** Real Jev decisions via OpenRouter’s Decisions API, with a live flight log.
+- **A sky that never waits.** Continuous physics and animation while requests run in the background.
+- **An increasingly unreasonable commute.** Uncapped acceleration, narrowing gaps, tighter pipe spacing, and bigger height changes.
+- **A speed boost you can grab.** Drag the slider during flight to multiply the current speed by up to 2×.
+- **A window into each decision.** Inspect the input, candidate trajectories, returned choice, probabilities when available, and the state when the move was applied.
+- **Your turn, too.** Keyboard and touch controls, optional sound, pause/resume, and local best scores.
+
+**Zero dependencies. No build step. Just Node.js and a browser.**
+
+## Take off
+
+You’ll need **Node.js 22.13+** and an OpenRouter API key with access to Jev. Manual play needs no key.
+
+From the repository directory, create your environment file if you don’t already have one:
 
 ```sh
-cp .env.example .env
+test -f .env || cp .env.example .env
 ```
 
-Add your OpenRouter key in `.env`:
+Add your key to `.env`:
 
 ```dotenv
-OPENROUTER_API_KEY=your_key_here
+OPENROUTER_API_KEY=your_openrouter_key_here
 JEV_MODEL=typesafe/jev-1.13
 PORT=3000
 ```
+
+Start the game:
 
 ```sh
 npm start
 ```
 
-Open **http://localhost:3000** and click **Start flight**. Restart the server after editing `.env`. `npm run dev` restarts when source files change. The server binds to loopback for local use; add authentication and appropriate request limits before exposing it publicly. `.env` is ignored by Git, never served, and the key stays on the server.
+Open **[localhost:3000](http://localhost:3000)** and click **Start flight**. Or select **Your turn** to fly yourself.
 
-Without a key, choose **Your turn**. Press **Space** or tap the game to flap, **P** to pause, or use the on-screen controls. Switching away from the browser tab pauses the flight and cancels outstanding requests. Best scores are stored locally, separately for human, guarded Jev, and unguarded Jev flights. There is no automatic restart or hidden background inference.
+The key stays on the server. `.env` is ignored by Git and never served to the browser. Restart the server after changing it. Jev flights use your OpenRouter credits; pausing stops new requests, and a completed flight shows reported API cost when available.
 
-Pipes and scenery gradually accelerate from **1× to 2× speed over 50 seconds** of active flight, then stay at 2×. The **Speed boost** slider below the game adds a multiplier from **1× to 2×**, adjustable before or during flight (up to **4× total speed** once the automatic ramp finishes). The sky shows the combined speed live. Pausing freezes the ramp; each new flight resets the ramp and keeps your selected boost. Boost changes affect future motion without jumping pipes or scenery. Bird gravity and flap strength stay the same. Jev's input, trajectory predictions, and collision guard all use the same accelerating world speed.
+| Control                    | What it does                                              |
+| -------------------------- | --------------------------------------------------------- |
+| **Space** or tap the sky   | Flap in **Your turn** mode                                |
+| **P** or the pause button  | Pause; press **P** or **Resume flight** to continue       |
+| **↻**                      | Reset the flight                                          |
+| **Speed boost** slider     | Apply a 1×–2× multiplier on top of automatic acceleration |
+| **Collision guard** switch | Enable or disable assistance before starting a flight     |
+| **Inspect input & output** | See the latest applied Jev decision and its context       |
 
-## The decision loop
+Switching away from the tab pauses the game. Best scores are stored in your browser, separately for human, assisted Jev, and unassisted Jev flights.
 
-1. The browser sends the current bird position, velocity, and pipe gaps to `POST /api/decision`.
-2. The server validates the state, simulates the possible flap/coast trajectories, and constructs a typed `choice` question.
-3. The server calls **`https://openrouter.ai/api/alpha/decisions`** with `{ model, state, questions }` and Bearer authentication. Jev uses the Decisions endpoint here.
-4. Jev returns `answers.movement.choice` (`flap` or `coast`), with optional `confidence` and `probabilities`. The chosen action is used directly. Missing probability values are shown as unavailable.
-5. Physics advances continuously at a fixed 120 Hz; canvas rendering follows the display refresh rate. Jev requests run independently, with at most one in flight and at least 180 ms between request starts. Each reply is consumed once at the next 180 ms control boundary. A flap resets upward velocity; without a new reply the bird coasts, subject to the optional guard. The network never freezes normal flight. The displayed response time includes the full browser round trip.
+## The 30-Second Club
 
-The optional **collision guard** runs locally every 180 ms, including while a request is pending. It searches possible flap/coast sequences over eight decision steps (1.44 simulated seconds). Each late Jev decision is checked against the bird's **current** position before application. If the proposed move has no safe continuation but the alternative does, the guard substitutes the alternative. With no fresh reply, the proposed move is coast; any corrective flap is labeled **guard while awaiting Jev**. These interventions do not increment the Jev decision count. The inspector records the original input, response, state age, actual application state, and any correction. Turn the guard off for pure Jev control; the bird then coasts during delayed replies and may crash. It is a finite-horizon check, **not a guarantee of collision-free play**. API errors pause the flight; resume explicitly to retry. Requests consume OpenRouter credits; the flight summary shows reported usage cost when available.
+**Can you survive longer than Jev? And how much does a safety net change the result?**
 
-The inspector shows the input state (including predictions) and normalized response, with latency, model, probabilities, cost, and any guard intervention. The fixed question and choice criteria are in `server/jev.js`.
+Set **Speed boost to 1.0×**, then try three flights in each mode. Reset between attempts and record your best time and pipe count.
 
-Verified against the [OpenRouter Decisions API reference](https://openrouter.ai/docs/api/api-reference/alphadecisions/submit-a-decisions-questions-and-answers-request) and [Jev model page](https://openrouter.ai/typesafe/jev-1.13).
+| Round                          | Setup                                                          | Your mission                                                  |
+| ------------------------------ | -------------------------------------------------------------- | ------------------------------------------------------------- |
+| **1. Human reflexes**          | Select **Your turn**                                           | Find a rhythm. Establish the score Jev has to beat.           |
+| **2. Jev, no training wheels** | Select **Jev pilot**, switch the guard **off** before starting | See how far Jev’s own choices get under real network latency. |
+| **3. Jev + a safety net**      | Reset and switch the guard **on**                              | Aim for 30 seconds. Watch for the orange guard interventions. |
 
-## Checks
+At 30 seconds you’re on **level 7**, moving at **1.92× the original base speed**, before any slider boost. The gaps have been getting tighter the whole time.
 
-```sh
-npm test
+| Pilot          | Best flight time | Pipes cleared |
+| -------------- | ---------------- | ------------- |
+| You            |                  |               |
+| Jev, guard off |                  |               |
+| Jev, guard on  |                  |               |
+
+**Bonus round: “Surely this is fine.”** Survive 15 seconds with the guard on, then drag the boost to **2.0×** without pausing. Try to reach level 7. The displayed speed includes both the ramp and your boost.
+
+**Bonus experiment: predict the pilot.** Pause a Jev flight, open the inspector, and look at its input before reading the output. Would you flap or coast? Compare your intuition with the trajectory predictions and Jev’s choice. When the guard intervenes, compare the original input with `applicationState`—the bird may have moved while the response was traveling.
+
+Courses are randomized, replies vary, and network latency matters. This is a hands-on experiment, not a controlled model benchmark. Compare several runs with the same boost setting. **A guard-assisted score measures the combined system, not Jev alone.**
+
+## The sky gets less forgiving
+
+The bird starts **20% faster** than the original game, at **138 pixels per second**. Forward speed keeps rising for as long as the flight lasts:
+
+```text
+speed = 138 × (1 + flightSeconds / 50) × sliderBoost
 ```
 
-Tests cover physics/prediction consistency, pipe and boundary collisions, scoring, guard interventions, the documented request/response shape, missing keys, upstream failures, state validation, private file isolation, cross-origin rejection, and concurrent-request handling. Provider calls in tests use mocks and do not consume credits. A live integration check requires your OpenRouter key.
+There is **no speed cap**. Every five active seconds, a new difficulty level changes the course:
 
-## Files
+| What changes                            | Progression                             |
+| --------------------------------------- | --------------------------------------- |
+| Pipe openings                           | 14 px narrower per level, down to 84 px |
+| New pipe spacing                        | 12 px closer per level, down to 180 px  |
+| Maximum height change between new pipes | 12 px larger per level, up to 160 px    |
 
-- `public/engine.js` — shared simulation, trajectory prediction, and collision guard.
-- `public/app.js` — canvas artwork, UI, and cancellable control loop.
-- `public/pilot.js` — continuous control loop and mailbox for asynchronous decisions.
-- `public/index.html`, `public/styles.css` — responsive flight deck.
-- `server/jev.js` — Jev question, validation, and OpenRouter request.
-- `server/index.js` — local server and server-only environment handling.
-- `test/` — Node's built-in test suite.
+Approaching gaps tighten smoothly and stop changing before the bird enters them. Spacing and height changes apply to newly generated pipes. Gravity and flap strength stay the same. The slider changes future movement without teleporting the scenery.
+
+Pause freezes progression. Reset starts a fresh course and difficulty ramp while keeping your selected slider boost.
+
+## Under the wings
+
+```mermaid
+flowchart LR
+    A[Bird + pipes + difficulty] --> B[Local Node server]
+    B --> C[OpenRouter Decisions API]
+    C --> D[Jev: flap or coast]
+    D --> E[Optional guard checks current state]
+    E --> F[Apply the move once]
+    F --> A
+```
+
+The browser sends structured state to `POST /api/decision`. The server validates it and computes candidate trajectories using the same physics as the game. Jev receives positions, velocity, actual pipe openings, current speed and difficulty, and the predicted outcomes of both actions. It does not receive screenshots.
+
+The server calls **`https://openrouter.ai/api/alpha/decisions`** with `{ model, state, questions }`. Jev returns a typed choice in `answers.movement.choice`, plus optional confidence and probabilities. This uses the **Decisions API**, not chat completions.
+
+Physics uses a 120 Hz base step, with smaller steps when necessary to catch collisions at high speed. Rendering follows the display refresh rate. Requests have at most one call in flight and start no more often than every 180 ms. Each reply is consumed once at a control boundary. Without a fresh reply, the bird coasts, subject to the guard. The displayed response time is the full browser round trip—not a guaranteed decision interval.
+
+### What the collision guard actually does
+
+The local guard searches possible flap/coast sequences over **1.44 simulated seconds**. It checks Jev’s choice against the bird’s **current** position, which may differ from the position originally sent to the model.
+
+If the proposed move has no safe continuation but the alternative does, the guard substitutes it. The log makes the source explicit:
+
+- **Jev decision:** the model’s choice was applied.
+- **Guard corrected Jev:** a local safety check changed that choice.
+- **Guard while awaiting Jev:** a local intervention covered a delayed response.
+
+Guard-only interventions never increment the Jev decision count. The inspector records the original input, state age, original choice, applied action, and any correction. Turning the guard off leaves the bird entirely dependent on Jev’s decisions and gravity between replies.
+
+The guard has a finite lookahead, and the course eventually becomes extremely demanding. Crashes are part of the experiment. API failures pause the flight with an explanation; they do not silently switch to a fake AI pilot.
+
+## Make it your own
+
+| File                                   | What to explore                                                             |
+| -------------------------------------- | --------------------------------------------------------------------------- |
+| [`public/engine.js`](public/engine.js) | Gravity, speed ramp, difficulty levels, predictions, and the guard          |
+| [`public/pilot.js`](public/pilot.js)   | The asynchronous decision mailbox and continuous control loop               |
+| [`server/jev.js`](server/jev.js)       | Jev’s question, choice criteria, validation, and OpenRouter request         |
+| [`public/app.js`](public/app.js)       | Canvas artwork, controls, telemetry, and sound                              |
+| [`server/index.js`](server/index.js)   | Local HTTP server and server-only configuration                             |
+| [`test/`](test/)                       | Physics, progression, delayed responses, API contracts, and security checks |
+
+A useful next experiment: change only Jev’s choice criteria in `server/jev.js`, then repeat the three-flight unassisted challenge. Can better instructions improve the result without changing the physics or adding assistance?
+
+```sh
+npm run dev  # Restart on source changes; refresh the browser after UI changes.
+npm test     # Built-in Node test runner. Mocked provider calls; no API spend.
+```
+
+Tests cover accelerating motion, progressively harder gates, collision detection, slider continuity, delayed replies, guard behavior, input validation, private-file isolation, and upstream errors.
+
+## If the bird won’t take off
+
+| Symptom                                           | Try this                                                                 |
+| ------------------------------------------------- | ------------------------------------------------------------------------ |
+| “One key away from takeoff”                       | Set `OPENROUTER_API_KEY` in `.env`, restart the server, then reconnect.  |
+| Key rejected, insufficient credits, or rate limit | Check the displayed OpenRouter error, resolve it, then resume.           |
+| Old controls or behavior after an update          | Refresh the browser. Restart the server if server code changed.          |
+| “A decision is already pending”                   | Pause other AI flights; this local server permits one request at a time. |
+| No API key yet                                    | Choose **Your turn**. The whole game works manually.                     |
+
+The server binds to `127.0.0.1` for local use. Public hosting would need authentication and per-user spending/request controls before exposing the API route.
+
+Built with vanilla JavaScript, Canvas 2D, and Node.js. Integration references: [Jev on OpenRouter](https://openrouter.ai/typesafe/jev-1.13) · [Decisions API](https://openrouter.ai/docs/api/api-reference/alphadecisions/submit-a-decisions-questions-and-answers-request).
+
+**State in. Decision out. Wings up.**

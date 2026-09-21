@@ -16,8 +16,8 @@ test("physics and obstacles keep moving during a two-second response delay", () 
   run(pilot, game, 2, true, (action) => actions.push(action));
   assert.equal(game.alive, true);
   assert.ok(Math.abs(game.time - 2) < 0.001);
-  // At 2% acceleration per second, the first two seconds cover 234.6 px.
-  assert.ok(Math.abs(game.pipes[0].x - (630 - 234.6)) < 0.001);
+  // A 20% faster starting speed plus acceleration covers 281.52 px in 2s.
+  assert.ok(Math.abs(game.pipes[0].x - (630 - 281.52)) < 0.001);
   assert.ok(actions.some((event) => event.source === "guard"));
   assert.ok(actions.every((event) => event.decision === null));
 });

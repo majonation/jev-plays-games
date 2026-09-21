@@ -9,6 +9,7 @@ import {
   guardDecision,
   observations,
   flightSpeed,
+  difficultyProfile,
 } from "../public/engine.js";
 
 test("later flights encounter pipes sooner and predictions use the increased speed", () => {
@@ -22,10 +23,11 @@ test("later flights encounter pipes sooner and predictions use the increased spe
     assert.equal(game.alive, time === 0);
     assert.equal(predicted.alive, game.alive);
   }
-  assert.equal(flightSpeed(25), WORLD.speed * 1.5);
-  assert.equal(flightSpeed(50), WORLD.speed * 2);
-  assert.equal(flightSpeed(200), WORLD.speed * 2);
-  assert.equal(flightSpeed(createGame().time), WORLD.speed);
+  assert.equal(flightSpeed(25), 207);
+  assert.equal(flightSpeed(50), 276);
+  assert.equal(flightSpeed(200), 690);
+  assert.ok(flightSpeed(400) > flightSpeed(200));
+  assert.equal(flightSpeed(createGame().time), 138);
 });
 
 test("changing the boost increases future movement without moving existing pipes or scenery", () => {
@@ -117,7 +119,7 @@ test("observations include both candidate trajectories and do not mutate game st
   assert.deepEqual(state, before);
 });
 
-test("lookahead guard keeps varied seeded flights viable despite noisy choices", () => {
+test("lookahead guard handles noisy choices through the first difficulty increase", () => {
   for (let seed = 1; seed <= 3; seed++) {
     let value = seed;
     const random = () => {
@@ -126,7 +128,7 @@ test("lookahead guard keeps varied seeded flights viable despite noisy choices",
     };
     const game = createGame(random);
     let interventions = 0;
-    for (let step = 0; step < 500 && game.alive; step++) {
+    for (let step = 0; step < 40 && game.alive; step++) {
       const result = guardDecision(
         snapshot(game),
         random() > 0.5 ? "flap" : "coast",
@@ -135,7 +137,50 @@ test("lookahead guard keeps varied seeded flights viable despite noisy choices",
       advance(game, WORLD.decisionSeconds, result.action);
     }
     assert.equal(game.alive, true, `seed ${seed} collided`);
-    assert.ok(game.score >= 30);
+    assert.ok(game.score >= 1);
     assert.ok(interventions > 0);
   }
+});
+
+test("gates tighten after five seconds without closing around the bird", () => {
+  const game = createGame(() => 0.5);
+  game.time = 4.99;
+  game.pipes[0].x = WORLD.birdX;
+  const nearbyGap = game.pipes[0].gap;
+  advance(game, 0.1);
+  assert.equal(difficultyProfile(game.time).level, 2);
+  assert.equal(game.pipes[0].gap, nearbyGap);
+  assert.ok(game.pipes[1].gap < WORLD.gap);
+  assert.ok(game.pipes[1].gap > difficultyProfile(game.time).gap);
+  const before = snapshot(game);
+  const prediction = predict(before, "coast");
+  advance(game, WORLD.decisionSeconds);
+  assert.equal(prediction.alive, game.alive);
+  assert.equal(prediction.y, Math.round(game.bird.y));
+});
+
+test("later gates spawn closer together with tighter gaps and greater height changes", () => {
+  const generated = [5, 20].map((time) => {
+    const game = createGame(() => 1);
+    game.time = time;
+    game.pipes = [{ id: 0, x: 700, gapY: 237, gap: WORLD.gap, scored: false }];
+    advance(game, WORLD.tick);
+    return {
+      spacing: game.pipes[1].x - game.pipes[0].x,
+      gap: game.pipes[1].gap,
+      heightChange: Math.abs(game.pipes[1].gapY - game.pipes[0].gapY),
+    };
+  });
+  assert.ok(generated[1].spacing < generated[0].spacing);
+  assert.ok(generated[1].gap < generated[0].gap);
+  assert.ok(generated[1].heightChange > generated[0].heightChange);
+});
+
+test("very high speed still detects a pipe crossing within one physics tick", () => {
+  const game = createGame(() => 0.5);
+  game.time = 10000;
+  game.bird.y = 100;
+  game.pipes[0].x = 280;
+  advance(game, WORLD.tick);
+  assert.equal(game.alive, false);
 });

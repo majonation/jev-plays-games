@@ -5,6 +5,7 @@ import {
   snapshot,
   observations,
   flightSpeed,
+  difficultyProfile,
 } from "./engine.js";
 import { RealtimePilot } from "./pilot.js";
 
@@ -363,7 +364,11 @@ function formatTime(time) {
 function updateStats() {
   setText(
     "world-speed",
-    `${(flightSpeed(game.time, game.speedMultiplier) / WORLD.speed).toFixed(2)}× SPEED · ${mode === "jev" ? "LIVE FLIGHT" : "SPACE OR TAP"}`,
+    `${(flightSpeed(game.time, game.speedMultiplier) / WORLD.speed).toFixed(2)}× SPEED · LEVEL ${difficultyProfile(game.time).level}`,
+  );
+  setText(
+    "difficulty-level",
+    `Level ${difficultyProfile(game.time).level} · harder in ${Math.max(1, Math.ceil(WORLD.difficultySeconds - (game.time % WORLD.difficultySeconds)))}s`,
   );
   setHTML("score", `${game.score}<span> pipes</span>`);
   setText("game-score", String(game.score).padStart(2, "0"));
@@ -533,8 +538,8 @@ function draw(now) {
   }
   for (const pipe of game.pipes) {
     if (pipe.x > 1050) continue;
-    const top = pipe.gapY - WORLD.gap / 2,
-      bottom = pipe.gapY + WORLD.gap / 2;
+    const top = pipe.gapY - (pipe.gap ?? WORLD.gap) / 2,
+      bottom = pipe.gapY + (pipe.gap ?? WORLD.gap) / 2;
     const gradient = ctx.createLinearGradient(
       pipe.x,
       0,

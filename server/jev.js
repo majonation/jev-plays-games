@@ -1,4 +1,4 @@
-import { observations } from "../public/engine.js";
+import { observations, WORLD } from "../public/engine.js";
 
 export const ENDPOINT = "https://openrouter.ai/api/alpha/decisions";
 export const DEFAULT_MODEL = "typesafe/jev-1.13";
@@ -26,7 +26,11 @@ export function validateState(input) {
     input.pipes.length < 1 ||
     input.pipes.length > 5 ||
     input.pipes.some(
-      (p) => !p || !finite(p.x, -100, 3000) || !finite(p.gapY, 100, 374),
+      (p) =>
+        !p ||
+        !finite(p.x, -100, 3000) ||
+        !finite(p.gapY, 100, 374) ||
+        !finite(p.gap ?? WORLD.gap, WORLD.minGap, WORLD.gap),
     )
   ) {
     throw new RequestError(
@@ -35,7 +39,11 @@ export function validateState(input) {
   }
   return {
     bird: { y: input.bird.y, vy: input.bird.vy },
-    pipes: input.pipes.map((p) => ({ x: p.x, gapY: p.gapY })),
+    pipes: input.pipes.map((p) => ({
+      x: p.x,
+      gapY: p.gapY,
+      gap: p.gap ?? WORLD.gap,
+    })),
     score: 0,
     time: input.time,
     speedMultiplier: input.speedMultiplier ?? 1,
