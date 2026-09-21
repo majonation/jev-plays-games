@@ -183,6 +183,7 @@ h1 > span {
 .game-card,
 .pilot-card,
 .decision-card,
+.json-debug-card,
 .log-card {
   border: 1px solid var(--border);
   border-radius: 11px;
@@ -550,6 +551,7 @@ canvas {
 }
 .pilot-card,
 .decision-card,
+.json-debug-card,
 .log-card {
   padding: 21px;
 }
@@ -954,6 +956,83 @@ pre {
   overflow: auto;
   color: #647154;
 }
+.json-debug-card {
+  min-width: 0;
+  grid-column: 1 / -1;
+}
+.json-debug-caption,
+.json-debug-footnote {
+  font-size: 10px;
+  line-height: 1.6;
+  color: #7b826f;
+  margin: 8px 0 0;
+}
+.json-debug-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 16px 0 9px;
+  color: #7b826f;
+  font-size: 9px;
+}
+#json-debug-stream {
+  height: calc(clamp(200px, 42vh, 390px) + 80px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  overflow-anchor: none;
+  scroll-behavior: auto;
+  border-radius: 7px;
+  background: #202820;
+  color: #d8dfcf;
+  scrollbar-color: #637159 #202820;
+  scrollbar-width: thin;
+}
+.json-response {
+  padding: 13px 11px;
+  border-bottom: 1px solid #3c4638;
+}
+.json-response-header {
+  position: sticky;
+  top: 0;
+  background: #202820;
+  box-shadow: 0 3px 0 #202820;
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  font: 9px/1.5 monospace;
+}
+.json-response-header strong {
+  white-space: nowrap;
+  color: #d9b879;
+}
+.json-response-error .json-response-header { color: #f3ad94; }
+.json-response-meta {
+  color: #a5b29b;
+  font: 9px/1.5 monospace;
+  margin: 4px 0 10px;
+}
+.json-response pre {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  max-height: none;
+  overflow: visible;
+  color: #aab4a1;
+  font: 10px/1.65 monospace;
+  overflow-wrap: anywhere;
+}
+.json-key { color: #c9dfba; }
+.json-string { color: #efc38f; }
+.json-number { color: #9ed5d4; }
+.json-boolean { color: #ceb4eb; }
+.json-null { color: #b3bba9; }
+.json-debug-empty {
+  padding: 24px 16px;
+  color: #a5b29b;
+  font-size: 11px;
+  line-height: 1.7;
+}
 .code-heading {
   font: 10px monospace;
   letter-spacing: 1px;
@@ -1297,6 +1376,49 @@ kbd {
   .arena canvas {
     height: 100%;
   }
+}
+/* Keep the game and debug stream together, including in a narrow app panel. */
+@media (max-width: 850px) {
+  .workspace.debug-open {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
+  }
+  .debug-open .flight-column,
+  .debug-open .telemetry { display: contents; }
+  .debug-open .game-card { grid-column: 1; grid-row: 1; min-width: 0; }
+  .debug-open .json-debug-card { grid-column: 2; grid-row: 1; padding: 12px; }
+  .debug-open .stats { grid-column: 1 / -1; grid-row: 2; margin-top: 0; }
+  .debug-open .connection-note { grid-column: 1 / -1; grid-row: 3; }
+  .debug-open .pilot-card { grid-column: 1 / -1; grid-row: 4; }
+  .debug-open .decision-card { grid-column: 1 / -1; grid-row: 5; }
+  .debug-open .log-card { grid-column: 1 / -1; grid-row: 6; }
+  .debug-open .card-toolbar {
+    height: auto;
+    padding: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .debug-open .arena { aspect-ratio: 1; }
+  .debug-open .arena-top { left: 8px; right: 8px; top: 8px; }
+  .debug-open .arena-bottom { display: none; }
+  .debug-open .overlay h3,
+  .debug-open .overlay p,
+  .debug-open .overlay-icon,
+  .debug-open .overlay-footnote { display: none; }
+  .debug-open .overlay .primary { padding: 10px; font-size: 11px; }
+  .debug-open .game-controls {
+    padding: 8px;
+    height: auto;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .debug-open .speed-controls { padding: 10px; flex-wrap: wrap; }
+  .debug-open .speed-description { flex-basis: 100%; }
+  .debug-open #speed-boost { min-width: 0; flex: 1; }
+  .debug-open .json-debug-toolbar { flex-wrap: wrap; }
+  .debug-open #json-debug-stream { height: calc(clamp(180px, 34vh, 300px) + 80px); }
+  .debug-open .json-response { padding: 10px 7px; }
 }
 @media (prefers-reduced-motion: reduce) {
   * {

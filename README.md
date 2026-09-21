@@ -21,6 +21,7 @@ _An actual Jev flight through OpenRouter, with the optional collision guard enab
 - **An increasingly unreasonable commute.** Uncapped acceleration, narrowing gaps, tighter pipe spacing, and bigger height changes.
 - **A speed boost you can grab.** Drag the slider during flight to multiply the current speed by up to 2×.
 - **A window into each decision.** Inspect the input, candidate trajectories, returned choice, probabilities when available, and the state when the move was applied.
+- **A live JSON debug stream.** Expand **Live JSON** in the sidebar for formatted, syntax-highlighted provider replies, arrival times, and request timings. It automatically follows the newest response.
 - **Your turn, too.** Keyboard and touch controls, optional sound, pause/resume, and local best scores.
 
 **Zero dependencies. No build step. Just Node.js and a browser.**
@@ -61,6 +62,9 @@ The key stays on the server. `.env` is ignored by Git and never served to the br
 | **Speed boost** slider     | Apply a 1×–2× multiplier on top of automatic acceleration |
 | **Collision guard** switch | Enable or disable assistance before starting a flight     |
 | **Inspect input & output** | See the latest applied Jev decision and its context       |
+| **Live JSON** switch       | Show incoming JSON with browser round-trip and provider timing |
+
+Live JSON keeps the latest 30 responses across flight resets, including replies received while the panel is hidden. **Clear** empties the local log. Successful entries show the original provider JSON before the collision guard; failures are labeled API or browser errors. Refreshing the page clears the history.
 
 Switching away from the tab pauses the game. Best scores are stored in your browser, separately for human, assisted Jev, and unassisted Jev flights.
 

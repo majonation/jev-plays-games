@@ -46,6 +46,7 @@ test("sends state and typed choices to the documented Decisions endpoint", async
   assert.equal(result.action, "flap");
   assert.equal(result.confidence, 0.8);
   assert.equal(result.cost, 0.00002);
+  assert.deepEqual(result.rawResponse, response);
 });
 
 test("accepts documented choice-only responses without inventing confidence", () => {
@@ -156,7 +157,10 @@ test("HTTP app serves game, keeps credentials private, proxies decisions, and re
     body: JSON.stringify(state()),
   });
   assert.equal(result.status, 200);
-  assert.equal((await result.json()).action, "flap");
+  const payload = await result.json();
+  assert.equal(payload.action, "flap");
+  assert.deepEqual(payload.rawResponse, response);
+  assert.ok(!JSON.stringify(payload).includes("private-test-key"));
   assert.equal(calls, 1);
 });
 

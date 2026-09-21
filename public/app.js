@@ -8,8 +8,10 @@ import {
   difficultyProfile,
 } from "./engine.js";
 import { RealtimePilot } from "./pilot.js";
+import { createJsonDebug } from "./debug.js";
 
 const $ = (id) => document.getElementById(id);
+const jsonDebug = createJsonDebug(document);
 const canvas = $("game");
 const ctx = canvas.getContext("2d");
 let game = createGame();
@@ -279,6 +281,7 @@ async function decide() {
   abortController = new AbortController();
   const state = snapshot(game);
   const input = observations(state);
+  let responseLogged = false;
   try {
     const response = await fetch("/api/decision", {
       method: "POST",
@@ -288,12 +291,20 @@ async function decide() {
     });
     const data = await response.json();
     if (requestEpoch !== epoch || phase !== "running") return;
+    const roundTripMs = Math.round(performance.now() - requestStarted);
+    jsonDebug.add(data.rawResponse ?? data, {
+      roundTripMs,
+      providerMs: data.latencyMs,
+      label: response.ok ? "Jev response" : `API error · HTTP ${response.status}`,
+      error: !response.ok,
+    });
+    responseLogged = true;
     if (!response.ok)
       throw new Error(data.error || "The decision could not be completed.");
     if (!["flap", "coast"].includes(data.action))
       throw new Error("Jev returned an unknown action.");
-    const roundTripMs = Math.round(performance.now() - requestStarted);
-    pilot.queue({ ...data, input, requestStarted, roundTripMs });
+    const { rawResponse, ...decision } = data;
+    pilot.queue({ ...decision, input, requestStarted, roundTripMs });
     decisionCount++;
     if (typeof data.cost === "number") totalCost += data.cost;
     $("decision-count").textContent = decisionCount;
@@ -322,6 +333,12 @@ async function decide() {
     );
   } catch (error) {
     if (requestEpoch !== epoch || error.name === "AbortError") return;
+    if (!responseLogged)
+      jsonDebug.add({ error: error.message }, {
+        roundTripMs: Math.round(performance.now() - requestStarted),
+        label: "Browser error · no JSON response",
+        error: true,
+      });
     pause(error.message);
     $("live-badge").innerHTML = "<i></i> INTERRUPTED";
     $("live-badge").classList.remove("connected");

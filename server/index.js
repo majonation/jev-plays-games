@@ -11,6 +11,7 @@ const files = new Map([
   ["/app.js", ["app.js", "text/javascript"]],
   ["/engine.js", ["engine.js", "text/javascript"]],
   ["/pilot.js", ["pilot.js", "text/javascript"]],
+  ["/debug.js", ["debug.js", "text/javascript"]],
   ["/favicon.svg", ["favicon.svg", "image/svg+xml"]],
 ]);
 

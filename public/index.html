@@ -182,6 +182,24 @@
           </div>
         </div>
         <aside class="telemetry">
+          <section class="json-debug-card">
+            <div class="section-heading">
+              <h2 id="json-debug-title">Live JSON</h2>
+              <button id="json-debug-toggle" class="switch" role="switch"
+                aria-checked="false" aria-label="Live JSON"
+                aria-controls="json-debug-body"></button>
+            </div>
+            <p class="json-debug-caption">Incoming replies, straight from Jev.</p>
+            <div id="json-debug-body" hidden>
+              <div class="json-debug-toolbar">
+                <span id="json-debug-count">0 responses · following latest</span>
+                <button id="json-debug-clear" class="text-button">Clear</button>
+              </div>
+              <div id="json-debug-stream" tabindex="0" role="region"
+                aria-labelledby="json-debug-title"></div>
+              <p class="json-debug-footnote">Last 30 replies · before the collision guard.<br />Timing includes the full browser round trip.</p>
+            </div>
+          </section>
           <section class="pilot-card">
             <div class="section-heading">
               <h2>Meet your pilot</h2>

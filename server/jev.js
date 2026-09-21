@@ -164,5 +164,6 @@ export async function askJev(
     model: typeof data.model === "string" ? data.model : model,
     latencyMs: Math.round(performance.now() - started),
     cost: Number.isFinite(data.usage?.cost) ? data.usage.cost : null,
+    rawResponse: data,
   };
 }
